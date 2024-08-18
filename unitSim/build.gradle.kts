@@ -5,7 +5,7 @@ import java.io.FileNotFoundException
 import java.net.URI
 import java.util.*
 
-version = "1.0.11"
+version = "1.0.12"
 
 plugins {
     jacoco

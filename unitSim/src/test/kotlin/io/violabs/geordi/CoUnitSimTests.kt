@@ -250,6 +250,7 @@ class CoUnitSimTests {
             }
 
             @Test
+            @Suppress("TooGenericExceptionThrown")
             fun `coWheneverThrows fails with an exception`() = testBlocking {
                 coWheneverThrows<Exception> {
                     throw Exception("Test failure")

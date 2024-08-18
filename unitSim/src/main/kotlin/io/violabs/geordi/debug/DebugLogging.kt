@@ -295,7 +295,9 @@ internal class DefaultDebugLogging(
         e to actual
     }
 
-    private fun List<Pair<String, String>>.alignContent(max: Int, added: String = "") = this.joinToString("\n") { (e, a) ->
+    private fun List<Pair<String, String>>.alignContent(
+        max: Int, added: String = ""
+    ) = this.joinToString("\n") { (e, a) ->
         val numberOfSpaces = max - e.length
 
         val g = " ".repeat(numberOfSpaces + PADDING)

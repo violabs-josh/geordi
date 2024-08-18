@@ -1,6 +1,13 @@
 package io.violabs.geordi.debug
 
-import io.mockk.*
+import io.mockk.clearAllMocks
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import io.mockk.just
+import io.mockk.Runs
+import io.mockk.spyk
+import io.mockk.verifyOrder
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
