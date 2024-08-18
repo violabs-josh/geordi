@@ -151,7 +151,7 @@ abstract class UnitSim(
     @Suppress("TooManyFunctions")
     open inner class TestSlice<T>(
         val json: Json?,
-        private val useHorizontalLogs: Boolean = false
+        val useHorizontalLogs: Boolean = false
     ) {
 
         private var expected: T? = null  // The expected result of the test.

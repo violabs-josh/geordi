@@ -36,7 +36,10 @@ koverReport {
     filters {
         excludes {
             // exclusion rules - classes to exclude from report
-            classes("io.violabs.geordi.examples.**")
+            classes(
+                "io.violabs.geordi.examples.**",
+                "io.violabs.geordi.exceptions.**"
+            )
         }
     }
 }

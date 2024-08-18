@@ -13,6 +13,7 @@ import io.violabs.geordi.debug.DebugLogging
 import io.violabs.geordi.shared.GeordiMockCompositionService
 import io.violabs.geordi.shared.GeordiMockTest
 import io.violabs.geordi.shared.GeordiTestClass
+import kotlinx.serialization.json.Json
 
 class CoUnitSimTests {
     val debugLogging = mockk<DebugLogging>()
@@ -89,6 +90,25 @@ class CoUnitSimTests {
 
     @Nested
     inner class CoTestSliceTests {
+        @Nested
+        inner class WithProvidedValues : CoUnitSim() {
+            @Test
+            fun `coTestSlice will process default values`() {
+                val slice = CoTestSlice<String>()
+
+                assert(slice.json == null)
+                assert(!slice.useHorizontalLogs)
+            }
+
+            @Test
+            fun `coTestSlice will process provided values`() {
+                val slice = CoTestSlice<String>(useHorizontalLogs = true, json = Json)
+
+                assert(slice.json == Json)
+                assert(slice.useHorizontalLogs)
+            }
+        }
+
         // normal flow setup && given
         @Nested
         inner class SetupTests : CoUnitSim() {
@@ -226,6 +246,13 @@ class CoUnitSimTests {
                             ACTUAL: ${it.item.message}
                         """.trimIndent()
                     }
+                }
+            }
+
+            @Test
+            fun `coWheneverThrows fails with an exception`() = testBlocking {
+                coWheneverThrows<Exception> {
+                    throw Exception("Test failure")
                 }
             }
         }
