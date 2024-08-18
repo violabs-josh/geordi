@@ -5,7 +5,8 @@ import io.mockk.mockkClass
 import io.mockk.spyk
 import io.mockk.verify
 import io.violabs.geordi.debug.DebugLogging
-import io.violabs.geordi.exceptions.FileNotFoundException
+import io.violabs.geordi.exceptions.NotFoundException
+import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.extension.ExtendWith
 import java.io.File
 import kotlin.reflect.KFunction
@@ -19,18 +20,22 @@ import io.mockk.every as mockkEvery
  *
  * @param testResourceFolder Directory path for test resources, if any.
  * @param debugLogging Instance for handling debug logging operations.
+ * @param json Instance of the Json serializer for serialization and deserialization.
  * @param debugEnabled Flag to enable or disable debug logging.
  */
 @ExtendWith(WarpDriveEngine::class)
 abstract class UnitSim(
     protected val testResourceFolder: String = "",
     protected val debugLogging: DebugLogging = DebugLogging.default(),
+    protected val json: Json = Json,
     internal val debugEnabled: Boolean = true
 ) {
     // Collection of mock objects used in the tests.
     private val mocks: MutableList<Any> = mutableListOf()
+
     // Collection of mock call tasks to be verified.
     private val mockCalls = mutableListOf<MockTask<*>>()
+
     // Storage for debug items.
     private val debugItems = mutableMapOf<String, Any?>()
 
@@ -38,7 +43,7 @@ abstract class UnitSim(
         val fullFilename = filename.takeIf { testResourceFolder.isEmpty() } ?: "$testResourceFolder/$filename"
         val uri = this::class.java.classLoader
             .getResource(fullFilename)
-            ?.toURI() ?: throw FileNotFoundException(filename)
+            ?.toURI() ?: throw NotFoundException.File(filename)
         return File(uri)
     }
 
@@ -80,7 +85,7 @@ abstract class UnitSim(
         horizontalLogs: Boolean = false,
         runnable: TestSlice<T>.() -> Unit
     ) {
-        val spec = TestSlice<T>(horizontalLogs)
+        val spec = TestSlice<T>(json, horizontalLogs)
 
         runnable(spec)
 
@@ -145,17 +150,19 @@ abstract class UnitSim(
      */
     @Suppress("TooManyFunctions")
     open inner class TestSlice<T>(
-        private val useHorizontalLogs: Boolean = false
+        val json: Json?,
+        val useHorizontalLogs: Boolean = false
     ) {
+
         private var expected: T? = null  // The expected result of the test.
         private var actual: T? = null    // The actual result obtained from the test.
 
         // Function placeholders for different test phases.
         internal var setupCall: () -> Unit = {}                         // Setup phase.
         internal var expectCall: () -> Unit = {}                        // Expectation definition phase.
-        internal var mockSetupCall: () -> Unit? = this::processMocks    // Mock setup phase.
+        internal var mockSetupCall: () -> Unit? = ::processMocks    // Mock setup phase.
         var wheneverCall: () -> Unit = {}                               // Action under test.
-        internal var thenCall: () -> Unit = this::defaultThenEquals     // Assertion phase.
+        internal var thenCall: () -> Unit = ::defaultThenEquals     // Assertion phase.
         internal var tearDownCall: () -> Unit = {}                      // Teardown phase.
 
         val objectProvider: DynamicProperties<T> = DynamicProperties()  // Provider for dynamic properties.
@@ -286,6 +293,11 @@ abstract class UnitSim(
             }
         }
 
+        fun <R> assertOrLog(assertion: Boolean, expected: R?, actual: R?, message: String? = null) {
+            assert(assertion) {
+                debugLogging.logAssertion(expected, actual, message, useHorizontalLogs = useHorizontalLogs)
+            }
+        }
 
         /**
          * Defines a custom 'then' function to handle assertions.
@@ -313,10 +325,7 @@ abstract class UnitSim(
             thenCall = {
                 runnable?.invoke(objectProvider)
 
-                assert(expected == actual) {
-                    // Logs the assertion details using 'debugLogging'.
-                    debugLogging.logAssertion(expected, actual, message, useHorizontalLogs)
-                }
+                assertOrLog(expected == actual, expected, actual, message)
             }
         }
 
@@ -331,10 +340,7 @@ abstract class UnitSim(
                 val mappedActual = mappingFn(actual)
                 val mappedExpected = mappingFn(expected)
 
-                assert(mappedExpected == mappedActual) {
-                    // Logs the assertion details using 'debugLogging'.
-                    debugLogging.logAssertion(mappedExpected, mappedActual, message, useHorizontalLogs)
-                }
+                assertOrLog<R>(mappedExpected == mappedActual, mappedExpected, mappedActual, message)
             }
         }
 
@@ -345,9 +351,7 @@ abstract class UnitSim(
          */
         fun defaultThenEquals() {
             // Asserts equality between 'expected' and 'actual', with logging on failure.
-            assert(expected == actual) {
-                debugLogging.logAssertion(expected, actual, useHorizontalLogs = useHorizontalLogs)
-            }
+            assertOrLog(expected == actual, expected, actual)
         }
 
         /**

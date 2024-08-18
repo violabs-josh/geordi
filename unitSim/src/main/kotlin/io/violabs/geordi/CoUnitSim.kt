@@ -2,6 +2,7 @@ package io.violabs.geordi
 
 import io.violabs.geordi.debug.DebugLogging
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
 import java.io.File
 import kotlin.reflect.KFunction
 import kotlin.test.assertFailsWith
@@ -16,9 +17,10 @@ import kotlin.test.assertFailsWith
  */
 abstract class CoUnitSim(
     testResourceFolder: String = "",
+    json: Json = Json,
     debugLogging: DebugLogging = DebugLogging.default(),
     debugEnabled: Boolean = true
-) : UnitSim(testResourceFolder, debugLogging, debugEnabled) {
+) : UnitSim(testResourceFolder, debugLogging, json, debugEnabled) {
 
     /**
      * Runs a test with the provided specification lambda.
@@ -30,7 +32,7 @@ abstract class CoUnitSim(
         horizontalLogs: Boolean = false,
         runnable: CoTestSlice<T>.() -> Unit
     ) = runBlocking {
-        val spec = CoTestSlice<T>(horizontalLogs)
+        val spec = CoTestSlice<T>(horizontalLogs, json)
 
         runnable(spec)
 
@@ -49,7 +51,10 @@ abstract class CoUnitSim(
      * @param useHorizontalLogs Flag to indicate if logs should be formatted horizontally.
      */
     @Suppress("TooManyFunctions")
-    inner class CoTestSlice<T>(useHorizontalLogs: Boolean = false) : UnitSim.TestSlice<T>(useHorizontalLogs) {
+    inner class CoTestSlice<T>(
+        useHorizontalLogs: Boolean = false,
+        json: Json? = null
+    ) : UnitSim.TestSlice<T>(json, useHorizontalLogs) {
         /**
          * Sets up a test environment using the provided setup function for coroutines.
          *

@@ -2,11 +2,12 @@ import java.io.FileNotFoundException
 import java.util.*
 
 plugins {
-    kotlin("jvm") version "1.9.21"
+    kotlin("jvm") version libs.versions.kotlin
+    kotlin("plugin.serialization") version libs.versions.kotlin
     `maven-publish`
     signing
-    id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
-    id("org.jetbrains.dokka") version "1.9.10"
+    alias(libs.plugins.dokka)
+    alias(libs.plugins.gradleNexusPublishPlugin)
 }
 
 group = "io.violabs.geordi"
@@ -27,13 +28,9 @@ subprojects {
 
     apply {
         plugin("org.jetbrains.kotlin.jvm")
+        plugin("org.jetbrains.kotlin.plugin.serialization")
         plugin("org.jetbrains.dokka")
     }
-
-    dependencies {
-
-    }
-
 }
 
 kotlin {

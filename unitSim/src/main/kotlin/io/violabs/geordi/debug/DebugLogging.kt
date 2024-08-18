@@ -42,7 +42,7 @@ interface DebugLogging {
      * Companion object to provide a default implementation of DebugLogging.
      */
     companion object {
-        fun default(): DebugLogging = DefaultDebugLogging()
+        fun default(): DebugLogging = DefaultDebugLogging(DefaultDebugLogging.Logger())
     }
 
     /**
@@ -69,7 +69,10 @@ private const val DEFAULT = 0
  * Default implementation of the DebugLogging interface.
  */
 @Suppress("TooManyFunctions")
-internal class DefaultDebugLogging : DebugLogging {
+internal class DefaultDebugLogging(
+    private val logger: DebugLogger,
+    private val diffChecker: DiffChecker = DiffChecker
+) : DebugLogging {
     override val debugItems = mutableMapOf<String, Any?>()
     /**
      * Adds a debug item to the debug items map.
@@ -95,8 +98,8 @@ internal class DefaultDebugLogging : DebugLogging {
     override fun logDebugItems() {
         // Check if there are any debug items to log.
         if (debugItems.isEmpty()) {
-            println("No debug items found")
-            println()
+            logger.log("No debug items found")
+            logger.log()
             return
         }
 
@@ -116,7 +119,7 @@ internal class DefaultDebugLogging : DebugLogging {
         val content = buildContent(max, debugLines)
 
         // Print the formatted debug log.
-        println(
+        logger.log(
             """
             |$topBorder
             |$debugTitleLine
@@ -125,7 +128,7 @@ internal class DefaultDebugLogging : DebugLogging {
             |$bottomBorder
         """.trimMargin()
         )
-        println()
+        logger.log()
     }
 
     /**
@@ -142,7 +145,7 @@ internal class DefaultDebugLogging : DebugLogging {
         val debugTitleLine = "║ $debugTitleSpaces$DEBUG_MOCKS_TITLE$debugTitleSpaces ║"
 
         // Print the top part of the mock metrics log.
-        println(
+        logger.log(
             """
             |$topBorder
             |$debugTitleLine
@@ -154,8 +157,8 @@ internal class DefaultDebugLogging : DebugLogging {
         callFn(DefaultMetricReader)
 
         // Print the bottom border of the mock metrics log.
-        println(bottomBorder)
-        println()
+        logger.log(bottomBorder)
+        logger.log()
     }
 
 
@@ -189,6 +192,7 @@ internal class DefaultDebugLogging : DebugLogging {
      * Default implementation of the MetricsReader interface for logging metrics.
      */
     object DefaultMetricReader : DebugLogging.MetricsReader {
+        private val logger = Logger()
         override fun List<Any>.logThrownCount() = logCount("THROWN")
         override fun List<Any>.logCalledCount() = logCount("CALLED")
         override fun List<Any>.logReturnedCount() = logCount("RETURNED")
@@ -198,7 +202,7 @@ internal class DefaultDebugLogging : DebugLogging {
             this.count().also {
                 val message = "# $label: $it"
                 val spaces = " ".repeat(DEBUG_DEFAULT_WIDTH - 1 - message.length)
-                println("║ $message $spaces ║")
+                logger.log("║ $message $spaces ║")
             }
         }
     }
@@ -243,32 +247,23 @@ internal class DefaultDebugLogging : DebugLogging {
         return "║ $debugTitleSpaces$this$debugTitleSpaces $offset║"
     }
 
-    override fun <T> logAssertion(expected: T?, actual: T?, message: String?, useHorizontalLogs: Boolean) {
-        message?.let { println("FAILED $message") }
+    override fun <T> logAssertion(
+        expected: T?,
+        actual: T?,
+        message: String?,
+        useHorizontalLogs: Boolean
+    ) {
+        message?.let { logger.log("FAILED $message") }
         if (useHorizontalLogs) {
-            println(makeHorizontalLogs(expected, actual))
+            logger.log(makeHorizontalLogs(expected, actual))
         } else {
-            println("EXPECT: $expected")
-            println("ACTUAL: $actual")
+            logger.log("EXPECT: $expected")
+            logger.log("ACTUAL: $actual")
         }
     }
 
     override fun <T> logDifferences(expected: T?, actual: T?) {
-        println(DiffChecker.findDifferences(expected.toString(), actual.toString()))
-    }
-
-    private fun List<String>.zipWithNulls(other: List<String>) = this.mapIndexed { index, e ->
-        val actual = other.getOrNull(index) ?: ""
-
-        e to actual
-    }
-
-    private fun List<Pair<String, String>>.alignContent(max: Int) = this.joinToString("\n") { (e, a) ->
-        val numberOfSpaces = max - e.length
-
-        val g = " ".repeat(numberOfSpaces + PADDING)
-
-        "$e$g$a"
+        logger.log(diffChecker.findDifferences(expected.toString(), actual.toString()))
     }
 
     override fun <T> makeHorizontalLogs(expected: T?, actual: T?): String {
@@ -279,18 +274,44 @@ internal class DefaultDebugLogging : DebugLogging {
 
         val max = expectedLines.maxOfOrNull(String::length) ?: DEFAULT
 
-        val based = zippedWithNulls.alignContent(max)
-
         val expectWord = "EXPECT"
         val actualWord = "ACTUAL"
 
         val numberOfSpaces = max - expectWord.length + PADDING
 
-        val titleGap = " ".repeat(numberOfSpaces)
+        val titleGap = if (numberOfSpaces < 0) "" else " ".repeat(numberOfSpaces)
+
+        val based = zippedWithNulls.alignContent(max, " ".takeIf { numberOfSpaces < 0 } ?: "")
 
         return """
-                |$expectWord$titleGap$actualWord
+                |$expectWord$titleGap|$actualWord
                 |$based
             """.trimMargin()
+    }
+
+    private fun List<String>.zipWithNulls(other: List<String>) = this.mapIndexed { index, e ->
+        val actual = other.getOrNull(index) ?: ""
+
+        e to actual
+    }
+
+    private fun List<Pair<String, String>>.alignContent(
+        max: Int, added: String = ""
+    ) = this.joinToString("\n") { (e, a) ->
+        val numberOfSpaces = max - e.length
+
+        val g = " ".repeat(numberOfSpaces + PADDING)
+
+        "$e$g$added|$a"
+    }
+
+    interface DebugLogger {
+        fun log(message: Any? = null)
+    }
+
+    internal class Logger : DebugLogger {
+        override fun log(message: Any?) {
+            println(message)
+        }
     }
 }

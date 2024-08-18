@@ -1,7 +1,6 @@
 package io.violabs.geordi
 
-import io.violabs.geordi.exceptions.SimulationGroupNotFoundException
-import io.violabs.geordi.exceptions.TestMethodNameNotFoundException
+import io.violabs.geordi.exceptions.NotFoundException
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.TestTemplateInvocationContext
 import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider
@@ -44,11 +43,11 @@ class WarpDriveEngine : TestTemplateInvocationContextProvider {
     override fun provideTestTemplateInvocationContexts(
         context: ExtensionContext?
     ): Stream<TestTemplateInvocationContext> {
-        val methodName: String = context?.requiredTestMethod?.name ?: throw TestMethodNameNotFoundException()
+        val methodName: String = context?.requiredTestMethod?.name ?: throw NotFoundException.TestMethodName
 
         val objScenarios = SCENARIO_STORE[methodName]
 
-        if (objScenarios !is SimulationGroup) throw SimulationGroupNotFoundException(methodName)
+        if (objScenarios !is SimulationGroup) throw NotFoundException.SimulationGroup(methodName)
 
         val anyIsolated = objScenarios.content.any { it.value.isolated }
 

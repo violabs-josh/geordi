@@ -1,0 +1,25 @@
+[versions]
+#plugins
+detekt = "1.23.6"
+dokka = "1.9.10"
+kotlin = "2.0.0"
+kover = "0.7.6"
+gradleNexusPublishPlugin = "2.0.0"
+
+#libraries
+junitJupiterApi = "5.11.0-M2"
+kotlinxCoroutines = "1.9.0-RC"
+kotlinxSerialization = "1.7.1"
+mockk = "1.13.12"
+
+[libraries]
+junitJupiterApi = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junitJupiterApi" }
+kotlinxCoroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+kotlinxSerialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+
+[plugins]
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+gradleNexusPublishPlugin = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "gradleNexusPublishPlugin" }
