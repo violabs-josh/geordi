@@ -17,7 +17,7 @@ import kotlin.test.assertFailsWith
  */
 abstract class CoUnitSim(
     testResourceFolder: String = "",
-    json: Json? = null,
+    json: Json = Json,
     debugLogging: DebugLogging = DebugLogging.default(),
     debugEnabled: Boolean = true
 ) : UnitSim(testResourceFolder, debugLogging, json, debugEnabled) {

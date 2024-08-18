@@ -3,8 +3,9 @@ import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import org.jetbrains.dokka.gradle.DokkaTask
 import java.io.FileNotFoundException
 import java.net.URI
+import java.util.*
 
-version = "1.0.6"
+version = "1.0.11"
 
 plugins {
     jacoco
@@ -69,7 +70,7 @@ tasks.named<DokkaTask>("dokkaJavadoc") {
         named("main") {
             includeNonPublic.set(true)
             skipDeprecated.set(true)
-            jdkVersion.set(11)
+            jdkVersion.set(17)
             sourceLink {
                 val uri: URI = URI.create("https://github.com/violabs/geordi")
                 this.remoteUrl.set(uri.toURL())
@@ -84,35 +85,49 @@ tasks.jar {
     exclude("**/examples/**")
 }
 
+val secretPropsFile = project.rootProject.file("secret.properties") // update to your secret file under `buildSrc`
+val ext = project.extensions.extraProperties
+if (secretPropsFile.exists()) {
+    secretPropsFile.reader().use {
+        Properties().apply { load(it) }
+    }.onEach { (name, value) ->
+        ext[name.toString()] = value
+    }
+    project.logger.log(LogLevel.LIFECYCLE, "Secrets loaded from file: $ext")
+}
+
 publishing {
     publications {
         repositories {
-            val ossrhUsername: String by project
-            val ossrhPassword: String by project
-            maven {
-                url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
-                credentials {
-                    username = ossrhUsername
-                    password = ossrhPassword
-                }
-            }
-            maven {
-                url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
-                credentials {
-                    username = ossrhUsername
-                    password = ossrhPassword
+            val libraryRepoUrl: String by project.ext
+            val publicationRepoName: String by project.ext
+            val secretFileUsernameKey: String by project.ext
+            val secretFilePasswordKey: String by project.ext
+            val envUsernameKey: String by project.ext
+            val envPasswordKey: String by project.ext
+            val publicationName: String by project.ext
+
+            mavenCentral()
+            repositories {
+                maven {
+                    name = publicationRepoName
+                    url = uri("https://maven.pkg.github.com/violabs/public-libs")
+                    credentials {
+                        username = project.findProperty(secretFileUsernameKey) as String? ?: System.getenv(envUsernameKey)
+                        password = project.findProperty(secretFilePasswordKey) as String? ?: System.getenv(envPasswordKey)
+                    }
                 }
             }
         }
 
-        create<MavenPublication>("mavenKotlin") {
-            from(components["kotlin"])
+        create<MavenPublication>("gpr") {
+            from(components["java"])
 
             artifactId = "unit-sim"
 
             // Project information
             pom {
-                name.set("Geordi - Next Generation Testing Framework")
+                name.set("Geordi - Lightweight Testing Framework")
                 description.set("""
                     Geordi Test Framework is a Kotlin-based testing framework integrating with
                     JUnit 5's TestTemplate for dynamic and parameterized testing. It supports file-based

@@ -27,7 +27,7 @@ import io.mockk.every as mockkEvery
 abstract class UnitSim(
     protected val testResourceFolder: String = "",
     protected val debugLogging: DebugLogging = DebugLogging.default(),
-    protected val json: Json? = null,
+    protected val json: Json = Json,
     internal val debugEnabled: Boolean = true
 ) {
     // Collection of mock objects used in the tests.
@@ -160,9 +160,9 @@ abstract class UnitSim(
         // Function placeholders for different test phases.
         internal var setupCall: () -> Unit = {}                         // Setup phase.
         internal var expectCall: () -> Unit = {}                        // Expectation definition phase.
-        internal var mockSetupCall: () -> Unit? = this::processMocks    // Mock setup phase.
+        internal var mockSetupCall: () -> Unit? = ::processMocks    // Mock setup phase.
         var wheneverCall: () -> Unit = {}                               // Action under test.
-        internal var thenCall: () -> Unit = this::defaultThenEquals     // Assertion phase.
+        internal var thenCall: () -> Unit = ::defaultThenEquals     // Assertion phase.
         internal var tearDownCall: () -> Unit = {}                      // Teardown phase.
 
         val objectProvider: DynamicProperties<T> = DynamicProperties()  // Provider for dynamic properties.
@@ -293,6 +293,11 @@ abstract class UnitSim(
             }
         }
 
+        fun <R> assertOrLog(assertion: Boolean, expected: R?, actual: R?, message: String? = null) {
+            assert(assertion) {
+                debugLogging.logAssertion(expected, actual, message, useHorizontalLogs = useHorizontalLogs)
+            }
+        }
 
         /**
          * Defines a custom 'then' function to handle assertions.
@@ -320,10 +325,7 @@ abstract class UnitSim(
             thenCall = {
                 runnable?.invoke(objectProvider)
 
-                assert(expected == actual) {
-                    // Logs the assertion details using 'debugLogging'.
-                    debugLogging.logAssertion(expected, actual, message, useHorizontalLogs)
-                }
+                assertOrLog(expected == actual, expected, actual, message)
             }
         }
 
@@ -338,10 +340,7 @@ abstract class UnitSim(
                 val mappedActual = mappingFn(actual)
                 val mappedExpected = mappingFn(expected)
 
-                assert(mappedExpected == mappedActual) {
-                    // Logs the assertion details using 'debugLogging'.
-                    debugLogging.logAssertion(mappedExpected, mappedActual, message, useHorizontalLogs)
-                }
+                assertOrLog<R>(mappedExpected == mappedActual, mappedExpected, mappedActual, message)
             }
         }
 
@@ -352,9 +351,7 @@ abstract class UnitSim(
          */
         fun defaultThenEquals() {
             // Asserts equality between 'expected' and 'actual', with logging on failure.
-            assert(expected == actual) {
-                debugLogging.logAssertion(expected, actual, useHorizontalLogs = useHorizontalLogs)
-            }
+            assertOrLog(expected == actual, expected, actual)
         }
 
         /**

@@ -243,7 +243,12 @@ internal class DefaultDebugLogging : DebugLogging {
         return "║ $debugTitleSpaces$this$debugTitleSpaces $offset║"
     }
 
-    override fun <T> logAssertion(expected: T?, actual: T?, message: String?, useHorizontalLogs: Boolean) {
+    override fun <T> logAssertion(
+        expected: T?,
+        actual: T?,
+        message: String?,
+        useHorizontalLogs: Boolean
+    ) {
         message?.let { println("FAILED $message") }
         if (useHorizontalLogs) {
             println(makeHorizontalLogs(expected, actual))

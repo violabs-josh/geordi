@@ -1,31 +1,10 @@
 package io.violabs.geordi
 
-import io.violabs.geordi.exceptions.NotFoundException
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class StringTestSliceTests {
-    @Nested
-    @Suppress("SwallowedException")
-    inner class ExpectJsonExceptionBlockingTest : UnitSim() {
-        @Test
-        fun `expectJson will throw an exception if JSON mapper is missing`() {
-            var exceptionCalled = false
-
-            try {
-                test {
-                    expectJson { "true" }
-
-                    whenever { "true" }
-                }
-            } catch (nfex: NotFoundException.JsonMapper) {
-                exceptionCalled = true
-            }
-
-            assert(exceptionCalled) { "NotFoundException not thrown!" }
-        }
-    }
 
     @Nested
     inner class ExpectJsonBlockingTest : UnitSim(json = Json) {
@@ -49,27 +28,6 @@ class StringTestSliceTests {
             whenever {
                 """{"firstItem":"firstValue","nestedObject":{"nestedItem":"nestedValue"},"array":["item1","item2"]}"""
             }
-        }
-    }
-
-    @Nested
-    @Suppress("SwallowedException")
-    inner class WheneverJsonExceptionBlockingTest : UnitSim() {
-        @Test
-        fun `wheneverJson will throw an exception if JSON mapper is missing`() {
-            var exceptionCalled = false
-
-            try {
-                test {
-                    expect { "true" }
-
-                    wheneverJson { "true" }
-                }
-            } catch (nfex: NotFoundException.JsonMapper) {
-                exceptionCalled = true
-            }
-
-            assert(exceptionCalled) { "NotFoundException not thrown!" }
         }
     }
 
@@ -99,27 +57,6 @@ class StringTestSliceTests {
     }
 
     @Nested
-    @Suppress("SwallowedException")
-    inner class CoExpectJsonExceptionReactiveTest : CoUnitSim() {
-        @Test
-        fun `coExpectJson will throw an exception if JSON mapper is missing`() {
-            var exceptionCalled = false
-
-            try {
-                testBlocking {
-                    coExpectJson { "true" }
-
-                    whenever { "true" }
-                }
-            } catch (nfex: NotFoundException.JsonMapper) {
-                exceptionCalled = true
-            }
-
-            assert(exceptionCalled) { "NotFoundException not thrown!" }
-        }
-    }
-
-    @Nested
     inner class CoExpectJsonReactiveTest : CoUnitSim(json = Json) {
         @Test
         fun `coExpectJson will return a string in a compressed format`() = testBlocking {
@@ -141,27 +78,6 @@ class StringTestSliceTests {
             whenever {
                 """{"firstItem":"firstValue","nestedObject":{"nestedItem":"nestedValue"},"array":["item1","item2"]}"""
             }
-        }
-    }
-
-    @Nested
-    @Suppress("SwallowedException")
-    inner class CoWheneverJsonExceptionReactiveTest : CoUnitSim() {
-        @Test
-        fun `coWheneverJson will throw an exception if JSON mapper is missing`() {
-            var exceptionCalled = false
-
-            try {
-                testBlocking {
-                    expect { "true" }
-
-                    coWheneverJson { "true" }
-                }
-            } catch (nfex: NotFoundException.JsonMapper) {
-                exceptionCalled = true
-            }
-
-            assert(exceptionCalled) { "NotFoundException not thrown!" }
         }
     }
 
